@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CRUD FORM</title>
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  margin: 0;
+  padding: 1em;
+  background-color: #333;
+  color: #fff;
+}
+
+h2 {
+  margin: 2em 0 1em;
+  font-size: 1.5em;
+}
+
+form {
+  display: inline-block;
+  margin: 1em;
+  padding: 1em;
+  border: 1px solid #ccc;
+}
+
+label {
+  display: inline-block;
+  margin: 0.5em 0;
+}
+
+input, select, button {
+  margin: 0.5em 0;
+  padding: 0.5em;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button[type="submit"] {
+  background-color: #333;
+  color: #fff;
+  cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  padding: 0.5em;
+  border: 1px solid #ccc;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: normal;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+#error-message {
+  color: #f00;
+  margin: 1em;
+}
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      
+      // Get all persons
+      $.ajax({
+        url: "/persons",
+        type: "GET",
+        success: function(data) {
+          console.log("All persons:", data);
+          // Display the persons in a table
+          for (let person of data) {
+            $("#persons-table").append("<tr><td>" + person.id + "</td><td>" + person.name + "</td><td>" + person.age + "</td><td>" + person.gender + "</td><td>" + person.email + "</td></tr>");
+          }
+        }
+      });
+      
+      // Add a new person
+      $("#add-person-form").submit(function(event) {
+        event.preventDefault();
+        const name = $("#name-input").val();
+        const age = $("#age-input").val();
+        const gender = $("#gender-input").val();
+        const email = $("#email-input").val();
+        $.ajax({
+          url: "/persons",
+          type: "POST",
+          data: JSON.stringify({ name: name, age: age, gender: gender, email: email }),
+          contentType: "application/json",
+          success: function(data) {
+            console.log("New person added:", data);
+            // Clear the form and display the new person in the table
+            $("#name-input").val("");
+            $("#age-input").val("");
+            $("#gender-input").val("");
+            $("#email-input").val("");
+            $("#persons-table").append("<tr><td>" + data.id + "</td><td>" + data.name + "</td><td>" + data.age + "</td><td>" + data.gender + "</td><td>" + data.email + "</td></tr>");
+          }
+        });
+      });
+      
+      // Get a specific person
+      $("#get-person-form").submit(function(event) {
+        event.preventDefault();
+        const id = $("#get-person-id-input").val();
+        $.ajax({
+          url: "/persons/" + id,
+          type: "GET",
+          success: function(data) {
+            console.log("Person with ID " + id + ":", data);
+            // Display the person's details
+            $("#get-person-details").html("<p>Name: " + data.name + "</p><p>Age: " + data.age + "</p><p>Gender: " + data.gender + "</p><p>Email: " + data.email + "</p>");
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            console.log(jqXHR.responseText);
+            $("#get-person-details").html("<p>" + jqXHR.responseText + "</p>");
+          }
+        });
+      });
+      
+      // Update a person
+      $("#update-person-form").submit(function(event) {
+        event.preventDefault();
+        const id = $("#update-person-id-input").val();
+        const name = $("#update-name-input").val();
+        const age = $("#update-age-input").val();
+        const gender = $("#update-gender-input").val();
+        const email = $("#update-email-input").val();
+        $.ajax({
+          url: "/persons/" + id,
+          type: "PUT",
+          data: JSON.stringify({ name: name, age: age, gender: gender, email: email }),
+          contentType: "application/json",
+          success: function(data) {
+            console.log("Person with ID " + id + " updated:", data);
+            // Clear the form and display the updated person in the table
+            $("#update-person-id-input").val("");
+            $("#update-name-input").val("");
+            $("#update-age-input").val("");
+            $("#update-gender-input").val("");
+            $("#update-email-input").val("");
+            $("#persons-table tr").filter(function() {
+              return $(this).find("td:first-child").text() === id.toString();
+            }).replaceWith("<tr><td>" + data.id + "</td><td>" + data.name + "</td><td>" + data.age + "</td><td>" + data.gender + "</td><td>" + data.email + "</td></tr>");
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            console.log(jqXHR.responseText);
+            alert(jqXHR.responseText);
+          }
+        });
+      });
+      
+      // Delete a person
+      $("#delete-person-form").submit(function(event) {
+        event.preventDefault();
+        const id = $("#delete-person-id-input").val();
+        $.ajax({
+          url: "/persons/" + id,
+          type: "DELETE",
+          success: function() {
+            console.log("Person with ID " + id + " deleted");
+            // Remove the deleted person from the table
+            $("#persons-table tr").filter(function() {
+              return $(this).find("td:first-child").text() === id.toString();
+            }).remove();
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            console.log(jqXHR.responseText);
+            alert(jqXHR.responseText);
+          }
+        });
+      });
+      
+    });
+  </script>
+</head>
+<body>
+
+  <h1>CRUD FORM</h1>
+  
+  <h2>All Persons</h2>
+  <table id="persons-table" border="1">
+    <tr><th>ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Email</th></tr>
+  </table>
+  
+  <h2>Add a New Person</h2>
+  <form id="add-person-form">
+    <label for="name-input">Name:</label>
+    <input type="text" id="name-input"><br>
+    <label for="age-input">Age:</label>
+    <input type="number" id="age-input"><br>
+    <label for="gender-input">Gender:</label>
+    <select id="gender-input">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="other">Other</option>
+    </select><br>
+    <label for="email-input">Email:</label>
+    <input type="email" id="email-input"><br>
+    <button type="submit">Add Person</button>
+  </form>
+  
+  <h2>Get a Specific Person</h2>
+  <form id="get-person-form">
+    <label for="get-person-id-input">ID:</label>
+    <input type="number" id="get-person-id-input">
+    <button type="submit">Get Person</button>
+  </form>
+  <div id="get-person-details"></div>
+  
+  <h2>Update a Person</h2>
+  <form id="update-person-form">
+    <label for="update-person-id-input">ID:</label>
+    <input type="number" id="update-person-id-input"><br>
+    <label for="update-name-input">Name:</label>
+    <input type="text" id="update-name-input"><br>
+    <label for="update-age-input">Age:</label>
+    <input type="number" id="update-age-input"><br>
+    <label for="update-gender-input">Gender:</label>
+    <select id="update-gender-input">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="other">Other</option>
+    </select><br>
+    <label for="update-email-input">Email:</label>
+    <input type="email" id="update-email-input"><br>
+    <button type="submit">Update Person</button>
+  </form>
+  
+  <h2>Delete a Person</h2>
+  <form id="delete-person-form">
+    <label for="delete-person-id-input">ID:</label>
+    <input type="number" id="delete-person-id-input">
+    <button type="submit">Delete Person</button>
+  </form>
+
+</body>
+</html>
